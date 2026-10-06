@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الإدارة العليا</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+    <header class="glass-header">
+        <div class="logo">
+            <h1>لوحة الإدارة العليا (Super Admin)</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">الرئيسية</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="dashboard-container">
+        <section class="glass-panel form-section" style="padding: 20px; margin-bottom: 30px;">
+            <h2>إضافة متجر جديد</h2>
+            <form id="add-store-form" style="display: grid; gap: 15px; margin-top: 20px;">
+                <input type="text" id="store-name" placeholder="اسم المتجر" required class="glass-input">
+                <input type="url" id="store-logo" placeholder="رابط الشعار (Logo URL)" class="glass-input">
+                <input type="email" id="store-email" placeholder="إيميل دخول البائع" required class="glass-input">
+                <input type="number" id="store-duration" placeholder="مدة الاشتراك (بالأيام)" required class="glass-input">
+                
+                <!-- التحكم في لون المتجر -->
+                <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;">
+                    <label>اللون الرئيسي للمتجر:</label>
+                    <input type="color" id="store-theme-color" value="#ff9a9e" style="cursor: pointer; border: none; height: 40px; border-radius: 5px;">
+                </div>
+
+                <button type="submit" class="btn-primary">إنشاء متجر</button>
+            </form>
+        </section>
+
+        <section class="glass-panel list-section" style="padding: 20px;">
+            <h2>المتاجر المسجلة</h2>
+            <div style="overflow-x: auto; margin-top: 20px;">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>الاسم</th>
+                            <th>الإيميل</th>
+                            <th>المدة</th>
+                            <th>اللون</th>
+                            <th>المنتجات</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stores-table-body">
+                        <!-- Stores will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('add-store-form');
+            const tbody = document.getElementById('stores-table-body');
+
+            function renderStores() {
+                const stores = Database.getStores();
+                tbody.innerHTML = '';
+                
+                stores.forEach(store => {
+                    const storeProducts = Database.getProducts(store.id);
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${store.logo ? `<img src="${store.logo}" width="30" height="30" style="border-radius: 5px;">` : ''}
+                                <a href="store.html?id=${store.id}" target="_blank" style="color: white; text-decoration: underline;">${store.name}</a>
+                            </div>
+                        </td>
+                        <td>${store.email}</td>
+                        <td>${store.duration} يوم</td>
+                        <td><div style="width: 25px; height: 25px; background: ${store.themeColor}; border-radius: 50%;"></div></td>
+                        <td>${storeProducts.length}</td>
+                        <td>
+                            <button class="btn-danger" onclick="deleteStore('${store.id}')">حذف</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newStore = {
+                    name: document.getElementById('store-name').value,
+                    logo: document.getElementById('store-logo').value,
+                    email: document.getElementById('store-email').value,
+                    duration: document.getElementById('store-duration').value,
+                    themeColor: document.getElementById('store-theme-color').value,
+                };
+                
+                Database.addStore(newStore);
+                form.reset();
+                renderStores();
+                alert('تم إضافة المتجر بنجاح!');
+            });
+
+            window.deleteStore = (id) => {
+                if(confirm('هل أنت متأكد من حذف هذا المتجر وكل منتجاته؟')) {
+                    Database.deleteStore(id);
+                    renderStores();
+                }
+            };
+
+            renderStores();
+        });
+    </script>
+</body>
+</html>

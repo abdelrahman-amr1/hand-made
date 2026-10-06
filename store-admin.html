@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة البائع</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+    <header class="glass-header">
+        <div class="logo">
+            <h1>لوحة البائع (إدارة المتجر)</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">خروج</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Login Simulation -->
+    <main class="dashboard-container" id="login-container" style="max-width: 400px; margin: 50px auto;">
+        <section class="glass-panel" style="padding: 30px; text-align: center;">
+            <h2>تسجيل الدخول لمتجرك</h2>
+            <form id="login-form" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+                <input type="email" id="login-email" placeholder="أدخل إيميل المتجر" required class="glass-input">
+                <button type="submit" class="btn-primary">دخول</button>
+            </form>
+        </section>
+    </main>
+
+    <!-- Store Dashboard -->
+    <main class="dashboard-container" id="store-dashboard" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="store-greeting">أهلاً بك</h2>
+            <a href="#" id="view-my-store" target="_blank" class="btn-primary" style="text-decoration: none;">عرض متجري</a>
+        </div>
+
+        <section class="glass-panel" style="padding: 20px; margin-bottom: 30px;">
+            <h3>إضافة منتج جديد</h3>
+            <form id="add-product-form" style="display: grid; gap: 15px; margin-top: 15px;">
+                <input type="text" id="prod-name" placeholder="اسم المنتج" required class="glass-input">
+                <input type="number" id="prod-price" placeholder="السعر (ج.م)" required class="glass-input">
+                <input type="url" id="prod-image" placeholder="رابط صورة المنتج" required class="glass-input">
+                <button type="submit" class="btn-primary">رفع المنتج</button>
+            </form>
+        </section>
+
+        <section class="glass-panel" style="padding: 20px;">
+            <h3>منتجاتي</h3>
+            <div style="overflow-x: auto; margin-top: 20px;">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>صورة</th>
+                            <th>الاسم</th>
+                            <th>السعر</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body">
+                        <!-- Products will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let currentStore = null;
+
+            const loginContainer = document.getElementById('login-container');
+            const storeDashboard = document.getElementById('store-dashboard');
+            
+            // Login Logic
+            document.getElementById('login-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const stores = Database.getStores();
+                const store = stores.find(s => s.email === email);
+                
+                if (store) {
+                    currentStore = store;
+                    loginContainer.style.display = 'none';
+                    storeDashboard.style.display = 'block';
+                    
+                    document.getElementById('store-greeting').innerText = `أهلاً بك في ${store.name}`;
+                    document.getElementById('view-my-store').href = `store.html?id=${store.id}`;
+                    
+                    // Set CSS variables for store owner theme preview
+                    document.documentElement.style.setProperty('--primary-color', store.themeColor);
+                    
+                    renderProducts();
+                } else {
+                    alert('لا يوجد متجر مسجل بهذا الإيميل!');
+                }
+            });
+
+            // Product Logic
+            const form = document.getElementById('add-product-form');
+            const tbody = document.getElementById('products-table-body');
+
+            function renderProducts() {
+                if(!currentStore) return;
+                
+                const products = Database.getProducts(currentStore.id);
+                tbody.innerHTML = '';
+                
+                products.forEach(product => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><img src="${product.image}" width="50" height="50" style="border-radius: 5px; object-fit: cover;"></td>
+                        <td>${product.name}</td>
+                        <td>${product.price} ج.م</td>
+                        <td>
+                            <button class="btn-danger" onclick="deleteProduct('${product.id}')">حذف</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newProduct = {
+                    storeId: currentStore.id,
+                    name: document.getElementById('prod-name').value,
+                    price: document.getElementById('prod-price').value,
+                    image: document.getElementById('prod-image').value
+                };
+                
+                Database.addProduct(newProduct);
+                form.reset();
+                renderProducts();
+            });
+
+            window.deleteProduct = (id) => {
+                if(confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+                    Database.deleteProduct(id);
+                    renderProducts();
+                }
+            };
+        });
+    </script>
+</body>
+</html>

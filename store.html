@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجر المشغولات اليدوية</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="store-page">
+    <div class="background-shapes">
+        <div class="shape shape-1" id="theme-shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3" id="theme-shape-3"></div>
+    </div>
+
+    <header class="glass-header">
+        <div class="logo" style="display: flex; align-items: center; gap: 15px;">
+            <img id="store-logo-img" src="" style="display: none; width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+            <h1 id="store-name-display">جاري التحميل...</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">منصة إبداع يدوي</a></li>
+                <li><a href="#products">المنتجات</a></li>
+            </ul>
+        </nav>
+        <div class="cart-icon">
+            🛒 <span id="cart-count" class="badge" style="background: var(--primary-color);">0</span>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero glass-panel">
+            <h2>أهلاً بك في عالم الفن اليدوي</h2>
+            <p>اكتشف تشكيلتنا الفريدة من المشغولات اليدوية المصنوعة بحب واهتمام بأدق التفاصيل.</p>
+        </section>
+
+        <section id="products" class="products-section">
+            <h2 class="section-title glass-title">المنتجات المتاحة</h2>
+            
+            <div id="loading-indicator" class="loading-glass">
+                جاري تحميل المنتجات...
+            </div>
+
+            <div class="products-grid" id="products-container">
+                <!-- Products load dynamically -->
+            </div>
+        </section>
+    </main>
+
+    <footer class="glass-footer">
+        <p>مُستضاف بفخر على <a href="index.html" style="color: var(--primary-color); font-weight: bold;">منصة إبداع يدوي</a></p>
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get store id from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const storeId = urlParams.get('id');
+            let cartCount = 0;
+            
+            if (!storeId) {
+                document.body.innerHTML = '<div style="text-align:center; padding: 50px;"><h2>لم يتم العثور على المتجر. تأكد من الرابط!</h2></div>';
+                return;
+            }
+
+            const stores = Database.getStores();
+            const store = stores.find(s => s.id === storeId);
+
+            if (!store) {
+                document.body.innerHTML = '<div style="text-align:center; padding: 50px;"><h2>هذا المتجر غير موجود أو تم حذفه.</h2></div>';
+                return;
+            }
+
+            // Apply Store Data
+            document.title = store.name;
+            document.getElementById('store-name-display').innerText = store.name;
+            if (store.logo) {
+                const logoImg = document.getElementById('store-logo-img');
+                logoImg.src = store.logo;
+                logoImg.style.display = 'block';
+            }
+
+            // Apply Theme Color
+            document.documentElement.style.setProperty('--primary-color', store.themeColor);
+            document.getElementById('theme-shape-1').style.background = store.themeColor;
+            document.getElementById('theme-shape-3').style.background = store.themeColor;
+
+            // Load Products
+            const productsContainer = document.getElementById('products-container');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const products = Database.getProducts(store.id);
+
+            loadingIndicator.style.display = 'none';
+
+            if (products.length === 0) {
+                productsContainer.innerHTML = '<p style="text-align: center; width: 100%; grid-column: 1 / -1;">لا توجد منتجات متاحة حالياً.</p>';
+            } else {
+                products.forEach(product => {
+                    const productCard = document.createElement('div');
+                    productCard.className = 'product-card';
+                    
+                    productCard.innerHTML = `
+                        <img src="${product.image}" alt="${product.name}" class="product-image">
+                        <h3 class="product-name">${product.name}</h3>
+                        <p class="product-price" style="color: var(--primary-color); font-weight: 700;">${product.price} ج.م</p>
+                        <button class="btn-add" onclick="addToCart()" style="background: var(--primary-color); border:none; opacity: 0.8;">أضف للسلة</button>
+                    `;
+                    productsContainer.appendChild(productCard);
+                });
+            }
+
+            window.addToCart = () => {
+                cartCount++;
+                document.getElementById('cart-count').innerText = cartCount;
+                const cartIcon = document.querySelector('.cart-icon');
+                cartIcon.style.transform = 'scale(1.2)';
+                setTimeout(() => cartIcon.style.transform = 'scale(1)', 200);
+            };
+        });
+    </script>
+</body>
+</html>
